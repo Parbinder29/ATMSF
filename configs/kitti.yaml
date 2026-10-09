@@ -1,0 +1,34 @@
+# KITTI Dataset Configuration
+dataset:
+  name: kitti
+  root: data/kitti
+  modalities: [rgb, depth]
+  num_classes: 2
+  class_names: [person, vehicle]
+  img_height: 256
+  img_width: 320
+
+preprocessing:
+  mean_rgb: [0.3450, 0.3690, 0.3780]
+  std_rgb:  [0.2770, 0.2840, 0.2890]
+  max_depth: 80.0
+
+augmentation:
+  horizontal_flip: true
+  color_jitter: true
+
+dataloader:
+  batch_size: 2
+  num_workers: 0
+  pin_memory: true
+  shuffle_train: true
+
+fault_injection:
+  enabled: true
+  modes:
+    - dropout
+    - gaussian_noise
+    - occlusion
+    - blur
+  dropout_prob: 0.15
+  noise_std: 0.05

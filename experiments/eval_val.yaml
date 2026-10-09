@@ -1,0 +1,47 @@
+checkpoint: experiments/stage3/last.pth
+epoch: 30
+fault:
+  rgb:
+    accuracy: 0.9999999999264705
+    f1: 0.0
+    precision: 0.0
+    recall: 0.0
+  thermal:
+    accuracy: 0.9999999999264705
+    f1: 0.0
+    precision: 0.0
+    recall: 0.0
+fps: 11.718173199887952
+map:
+  mAP@0.5: !!python/object/apply:numpy._core.multiarray.scalar
+  - &id001 !!python/object/apply:numpy.dtype
+    args:
+    - f8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    vwLAT8S07D8=
+miou:
+  IoU_background: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    wgsJQpXB3j8=
+  IoU_person: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    YC+suwKF3j8=
+  mIoU: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    kZ3a/kuj3j8=
+split: val
+train_loss: 0.5590424825956452

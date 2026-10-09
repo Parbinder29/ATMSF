@@ -1,0 +1,60 @@
+AFTMSF SESSION SAVE — 28 April 2026
+=====================================
+ENVIRONMENT:
+  conda activate aftmsf
+  cd D:/aftmsf
+
+ALL MODULES COMPLETE:
+  src/models/encoders/rgb_encoder.py       OK
+  src/models/encoders/thermal_encoder.py   OK
+  src/models/encoders/depth_encoder.py     OK
+  src/models/fault_detector.py             OK
+  src/models/acaf_module.py                OK
+  src/models/detection_head.py             OK
+  src/models/seg_head.py                   OK
+  src/models/aftmsf_model.py               OK
+  src/models/baselines.py                  OK
+  src/losses/multitask_loss.py             OK
+  src/losses/reliability_reg.py            OK
+  src/datasets/kaist_dataset.py            OK
+  src/datasets/kitti_dataset.py            OK
+  src/train.py                             OK
+  src/train_kitti.py                       OK
+  src/evaluate.py                          OK
+  src/evaluate_kitti.py                    OK
+  src/visualize.py                         OK
+  src/experiments/fault_experiment.py      OK
+  src/experiments/baseline_experiment.py   OK
+
+KAIST TRAINING COMPLETE:
+  Stage 1: loss 9.88 -> 3.98  experiments/stage1/last.pth
+  Stage 2: loss 3.60 -> 2.03  experiments/stage2/last.pth
+  Stage 3: loss 1.59 -> 0.559 experiments/stage3/last.pth
+
+KAIST RESULTS:
+  Val  mAP@0.5 = 89.71%   mIoU = 47.87%   FPS = 12.5
+  Test mAP@0.5 = 89.14%   mIoU = 44.28%   FPS = 13.9
+
+BASELINE COMPARISON (paper Table 2):
+  RGBOnly      mAP = 69.97%   mIoU = 37.00%
+  EarlyFusion  mAP = 70.66%   mIoU = 38.45%
+  LateFusion   mAP = 77.89%   mIoU = 36.34%
+  AFTMSF       mAP = 89.14%   mIoU = 44.28%
+
+FAULT INJECTION RESULTS (paper Table 3):
+  Baseline          mAP = 89.14%
+  RGB Dropout       mAP = 63.85%  (-25.28%)
+  RGB Blur          mAP = 69.83%  (-19.30%)
+  Thermal Noise     mAP = 88.00%  (-1.14%)
+
+KITTI TRAINING:
+  Stage 1: loss 13.87->7.65  experiments/kitti_stage1/last.pth
+  Stage 2: loss 8.39->4.99   experiments/kitti_stage2/last.pth
+  Stage 3: RUN NEXT
+
+NEXT SESSION:
+  1. conda activate aftmsf
+  2. cd D:/aftmsf
+  3. python -m src.train_kitti --config configs/kitti.yaml --stage 3 --resume experiments/kitti_stage2/last.pth
+  4. python -m src.evaluate_kitti --checkpoint experiments/kitti_stage3/last.pth
+  5. Paper writing begins

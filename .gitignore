@@ -1,0 +1,17 @@
+# Datasets (~50 GB) — download separately, see README
+data/
+
+# Model checkpoints (100-800 MB each, over GitHub's 100 MB limit)
+*.pth
+*.pt
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Editor / OS
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini

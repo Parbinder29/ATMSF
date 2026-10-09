@@ -1,0 +1,35 @@
+# FLIR ADAS Thermal Dataset Configuration
+dataset:
+  name: flir
+  root: data/flir/FLIR_ADAS_1_3
+  modalities: [rgb, thermal]
+  num_classes: 3
+  class_names: [person, bicycle, car]
+  img_height: 256
+  img_width: 320
+
+preprocessing:
+  mean_rgb: [0.4820, 0.4820, 0.4820]
+  std_rgb:  [0.2350, 0.2350, 0.2350]
+  mean_thermal: [0.4500]
+  std_thermal:  [0.2200]
+
+augmentation:
+  horizontal_flip: true
+  color_jitter: true
+
+dataloader:
+  batch_size: 2
+  num_workers: 0
+  pin_memory: true
+  shuffle_train: true
+
+fault_injection:
+  enabled: true
+  modes:
+    - dropout
+    - gaussian_noise
+    - occlusion
+    - blur
+  dropout_prob: 0.15
+  noise_std: 0.05
