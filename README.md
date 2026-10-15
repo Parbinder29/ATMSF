@@ -148,7 +148,13 @@ python -m src.visualize_all
 (`fault_experiment_results.json`, `baseline_fault_results.json`, `model_stats.json`) and the
 TensorBoard logs, so it needs no GPU.
 
+Step-by-step demo commands, with expected results, are in [RUN_COMMANDS.md](RUN_COMMANDS.md).
+
 ## Train from scratch
+
+All training scripts accept `--exp_dir <folder>` (where to save; defaults to
+`experiments/<stage>`) and `--epochs <n>` (override the stage length, e.g. `1` for a demo).
+Use `--exp_dir` for any test run so the trained models are not overwritten.
 
 ```
 python -m src.train --config configs/kaist.yaml --stage 1

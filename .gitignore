@@ -18,3 +18,6 @@ desktop.ini
 
 # Personal session notes
 SESSION_SAVE.txt
+
+# Demo training runs
+experiments/demo_*/

@@ -31,7 +31,8 @@ from src.train import build_det_targets
 
 
 def train_flir(config_path: str, stage: int = 1,
-               resume: str = None):
+               resume: str = None, exp_dir: str = None,
+               epochs: int = None):
 
     with open(config_path) as f:
         cfg = yaml.safe_load(f)
@@ -42,7 +43,7 @@ def train_flir(config_path: str, stage: int = 1,
     print(f"Device : {device}")
     print(f"Stage  : {stage}")
 
-    exp_dir = Path(f'experiments/flir_stage{stage}')
+    exp_dir = Path(exp_dir) if exp_dir else Path(f'experiments/flir_stage{stage}')
     exp_dir.mkdir(parents=True, exist_ok=True)
     writer  = SummaryWriter(str(exp_dir / 'tb_logs'))
 
@@ -64,7 +65,7 @@ def train_flir(config_path: str, stage: int = 1,
 
     # ── Optimiser ─────────────────────────────────────────────────────
     base_lr = {1: 1e-3, 2: 1e-4, 3: 5e-5}.get(stage, 1e-4)
-    epochs  = {1: 5,    2: 5,    3: 10  }.get(stage, 5)
+    epochs  = epochs or {1: 5, 2: 5, 3: 10}.get(stage, 5)
 
     optimizer = torch.optim.AdamW(
         model.get_parameter_groups(base_lr),
@@ -263,5 +264,9 @@ if __name__ == '__main__':
                         default='configs/flir.yaml')
     parser.add_argument('--stage',  type=int, default=1)
     parser.add_argument('--resume', default=None)
+    parser.add_argument('--exp_dir', default=None,
+                        help='output folder (default experiments/flir_stage<N>)')
+    parser.add_argument('--epochs', type=int, default=None,
+                        help='override the stage epoch count (e.g. 1 for a demo)')
     args = parser.parse_args()
-    train_flir(args.config, args.stage, args.resume)
+    train_flir(args.config, args.stage, args.resume, args.exp_dir, args.epochs)

@@ -368,7 +368,8 @@ def train_one_epoch(
 
 
 # ── Main training function ─────────────────────────────────────────────
-def train(config_path: str, stage: int = 1, resume: str = None):
+def train(config_path: str, stage: int = 1, resume: str = None,
+          exp_dir: str = None, epochs: int = None):
 
     # Load config
     with open(config_path) as f:
@@ -379,7 +380,7 @@ def train(config_path: str, stage: int = 1, resume: str = None):
     print(f"Stage  : {stage}")
 
     # Experiment directory
-    exp_dir = Path('experiments') / f'stage{stage}'
+    exp_dir = Path(exp_dir) if exp_dir else Path('experiments') / f'stage{stage}'
     exp_dir.mkdir(parents=True, exist_ok=True)
     writer  = SummaryWriter(log_dir=str(exp_dir / 'tb_logs'))
 
@@ -414,7 +415,7 @@ def train(config_path: str, stage: int = 1, resume: str = None):
     )
 
     # Cosine annealing scheduler
-    epochs = {1: 10, 2: 10, 3: 30}.get(stage, 10)
+    epochs = epochs or {1: 10, 2: 10, 3: 30}.get(stage, 10)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=epochs, eta_min=base_lr * 0.01
     )
@@ -425,7 +426,7 @@ def train(config_path: str, stage: int = 1, resume: str = None):
     # Resume from checkpoint
     start_epoch = 1
     if resume and Path(resume).exists():
-        ckpt = torch.load(resume, map_location=device)
+        ckpt = torch.load(resume, map_location=device, weights_only=False)
         model.load_state_dict(ckpt['model'])
         # Skip optimizer state when changing stages
         # (parameter groups change between stages)
@@ -529,6 +530,10 @@ if __name__ == '__main__':
     parser.add_argument('--config', default='configs/kaist.yaml')
     parser.add_argument('--stage',  type=int, default=1)
     parser.add_argument('--resume', default=None)
+    parser.add_argument('--exp_dir', default=None,
+                        help='output folder (default experiments/stage<N>)')
+    parser.add_argument('--epochs', type=int, default=None,
+                        help='override the stage epoch count (e.g. 1 for a demo)')
     args = parser.parse_args()
 
-    train(args.config, args.stage, args.resume)
+    train(args.config, args.stage, args.resume, args.exp_dir, args.epochs)
