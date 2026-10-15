@@ -1,0 +1,136 @@
+{
+  "clean": {
+    "full": {
+      "mAP@0.5": 89.1356,
+      "mIoU": 44.2847,
+      "rgb_conf": 0.7167,
+      "thermal_conf": 0.4288
+    },
+    "no_entropy": {
+      "mAP@0.5": 89.3079,
+      "mIoU": 45.1022,
+      "rgb_conf": 0.6372,
+      "thermal_conf": 0.4277
+    },
+    "no_fault_detector": {
+      "mAP@0.5": 89.1967,
+      "mIoU": 45.5454,
+      "rgb_conf": 0.5,
+      "thermal_conf": 0.5
+    }
+  },
+  "faults": {
+    "rgb_dropout": {
+      "with_fd": {
+        "mAP@0.5": 63.8546,
+        "mIoU": 34.4205,
+        "rgb_conf": 0.3889,
+        "thermal_conf": 0.4288
+      },
+      "without_fd": {
+        "mAP@0.5": 64.6769,
+        "mIoU": 34.7149,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    },
+    "rgb_blur": {
+      "with_fd": {
+        "mAP@0.5": 69.8316,
+        "mIoU": 37.6361,
+        "rgb_conf": 0.3586,
+        "thermal_conf": 0.4288
+      },
+      "without_fd": {
+        "mAP@0.5": 69.9194,
+        "mIoU": 37.8825,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    },
+    "rgb_occlusion": {
+      "with_fd": {
+        "mAP@0.5": 78.7726,
+        "mIoU": 44.9062,
+        "rgb_conf": 0.627,
+        "thermal_conf": 0.4288
+      },
+      "without_fd": {
+        "mAP@0.5": 79.5389,
+        "mIoU": 44.5932,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    },
+    "rgb_gaussian_noise": {
+      "with_fd": {
+        "mAP@0.5": 80.8243,
+        "mIoU": 42.0022,
+        "rgb_conf": 0.6885,
+        "thermal_conf": 0.4288
+      },
+      "without_fd": {
+        "mAP@0.5": 80.9313,
+        "mIoU": 42.141,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    },
+    "thermal_dropout": {
+      "with_fd": {
+        "mAP@0.5": 78.201,
+        "mIoU": 39.8685,
+        "rgb_conf": 0.7167,
+        "thermal_conf": 0.6035
+      },
+      "without_fd": {
+        "mAP@0.5": 77.4829,
+        "mIoU": 39.8939,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    },
+    "thermal_blur": {
+      "with_fd": {
+        "mAP@0.5": 79.4062,
+        "mIoU": 38.8634,
+        "rgb_conf": 0.7167,
+        "thermal_conf": 0.505
+      },
+      "without_fd": {
+        "mAP@0.5": 78.6843,
+        "mIoU": 39.0498,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    },
+    "thermal_occlusion": {
+      "with_fd": {
+        "mAP@0.5": 81.0278,
+        "mIoU": 44.8653,
+        "rgb_conf": 0.7167,
+        "thermal_conf": 0.4618
+      },
+      "without_fd": {
+        "mAP@0.5": 80.928,
+        "mIoU": 45.0244,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    },
+    "thermal_gaussian_noise": {
+      "with_fd": {
+        "mAP@0.5": 80.6109,
+        "mIoU": 40.4677,
+        "rgb_conf": 0.7167,
+        "thermal_conf": 0.5847
+      },
+      "without_fd": {
+        "mAP@0.5": 80.3484,
+        "mIoU": 40.1803,
+        "rgb_conf": 0.5,
+        "thermal_conf": 0.5
+      }
+    }
+  }
+}

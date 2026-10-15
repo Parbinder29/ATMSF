@@ -37,6 +37,28 @@ def load_fault_results():
     with open(FAULT_RESULTS) as f:
         return json.load(f)
 
+
+def read_tb(run, tag, last_file_only=False):
+    """Per-epoch values of `tag` from experiments/<run>/tb_logs.
+    Event files are concatenated in time order (a resumed run continues the
+    curve); last_file_only keeps only the final run."""
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+    files = sorted(Path(f'experiments/{run}/tb_logs').glob('events.*'))
+    vals = []
+    for f in files:
+        ea = EventAccumulator(str(f), size_guidance={'scalars': 0})
+        ea.Reload()
+        if tag in ea.Tags()['scalars']:
+            run_vals = [e.value for e in ea.Scalars(tag)]
+            vals = run_vals if last_file_only else vals + run_vals
+    return vals
+
+
+# Parameter counts, FPS and learned temperature (measured from checkpoints)
+def load_model_stats():
+    with open('experiments/model_stats.json') as f:
+        return json.load(f)
+
 # ── Colour scheme ──────────────────────────────────────────────────────
 C = {
     'kaist' : '#2196F3',   # blue
@@ -71,20 +93,20 @@ def fig1_training_curves():
     fig.suptitle('AFTMSF Training Convergence Across All Datasets',
                  fontsize=14, fontweight='bold')
 
-    # KAIST
-    s1 = [9.88,6.50,5.81,5.43,4.99,4.68,4.41,4.16,3.98,4.02]
-    s2 = [3.60,2.81,2.32,2.03]
-    s3 = [1.59,1.41,1.30,1.23,1.20,1.11,1.08,0.89,0.78,0.72,
-          0.71,0.69,0.65,0.63,0.60,0.57,0.59,0.56,0.58,0.56,
-          0.65,0.63,0.61,0.58,0.60,0.57,0.58,0.56,0.58,0.56]
-    e1=list(range(1,11)); e2=list(range(11,15)); e3=list(range(15,45))
+    # KAIST — read from TensorBoard logs (stage 3 was resumed once: 6 + 30 epochs)
+    s1 = read_tb('stage1', 'epoch/total_loss', last_file_only=True)
+    s2 = read_tb('stage2', 'epoch/total_loss')
+    s3 = read_tb('stage3', 'epoch/total_loss')
+    e1 = list(range(1, len(s1)+1))
+    e2 = list(range(e1[-1]+1, e1[-1]+1+len(s2)))
+    e3 = list(range(e2[-1]+1, e2[-1]+1+len(s3)))
     ax = axes[0]
     ax.plot(e1,s1,'o-',color=C['stage1'],label='Stage 1',markersize=3)
     ax.plot(e2,s2,'s-',color=C['stage2'],label='Stage 2',markersize=3)
-    ax.plot(e3,s3[:30],'^-',color=C['stage3'],
+    ax.plot(e3,s3,'^-',color=C['stage3'],
             label='Stage 3',markersize=2)
-    ax.axvline(10.5,color='gray',linestyle='--',alpha=0.5)
-    ax.axvline(14.5,color='gray',linestyle='--',alpha=0.5)
+    ax.axvline(e1[-1]+0.5,color='gray',linestyle='--',alpha=0.5)
+    ax.axvline(e2[-1]+0.5,color='gray',linestyle='--',alpha=0.5)
     ax.set_xlabel('Epoch'); ax.set_ylabel('Total Loss')
     ax.set_title('KAIST (RGB+Thermal)')
     ax.legend(); ax.set_ylim(0, 12)
@@ -243,9 +265,10 @@ def fig3_fault_heatmap():
 def fig4_cross_dataset():
     datasets = ['KAIST\n(RGB+Thermal)', 'KITTI\n(RGB+Depth)',
                 'FLIR\n(RGB+Thermal)']
+    fps       = load_model_stats()['fps']
     map_vals  = [89.14, 21.53, 1.52]
     miou_vals = [44.28, 22.55, 16.34]
-    fps_vals  = [13.9,  31.6,  36.8 ]
+    fps_vals  = [fps['AFTMSF_KAIST'], fps['AFTMSF_KITTI'], fps['AFTMSF_FLIR']]
 
     x     = np.arange(len(datasets))
     width = 0.25
@@ -356,9 +379,12 @@ def fig5_loss_breakdown():
 # ======================================================================
 def fig6_fps_map_tradeoff():
     methods = ['RGB Only', 'Early Fusion', 'Late Fusion', 'AFTMSF']
+    stats   = load_model_stats()
+    keys    = ['RGBOnly', 'EarlyFusion', 'LateFusion']
     map_v   = [69.97, 70.66, 77.89, 89.14]
-    fps_v   = [45.0,  40.0,  25.0,  13.9]
-    params  = [27.3,  27.3,  54.1,  67.4]  # millions
+    fps_v   = [stats['fps'][k] for k in keys] + [stats['fps']['AFTMSF_KAIST']]
+    params  = [round(stats['params'][k] / 1e6, 1) for k in keys] + \
+              [round(stats['params']['kaist']['total'] / 1e6, 1)]
     colors  = [C['rgb'], C['early'], C['late'], C['aftmsf']]
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -370,7 +396,8 @@ def fig6_fps_map_tradeoff():
         ax.scatter(f, m, s=size, c=c, alpha=0.8,
                    edgecolors='black', linewidth=1.5,
                    zorder=5)
-        offset = (2, 1) if method != 'Late Fusion' else (2, -3)
+        offset = {'Late Fusion': (-18, -2), 'Early Fusion': (-4, 5),
+                  'RGB Only': (-6, -5)}.get(method, (2, 1))
         ax.annotate(
             f'{method}\n({p}M params)',
             (f, m),
@@ -385,14 +412,8 @@ def fig6_fps_map_tradeoff():
     ax.set_title('Performance vs Speed Tradeoff\n'
                  '(bubble size = model parameters)',
                  fontsize=13, fontweight='bold')
-    ax.set_xlim(0, 60)
+    ax.set_xlim(0, 85)
     ax.set_ylim(60, 95)
-
-    # Ideal region annotation
-    ax.annotate('Ideal\nregion',
-                xy=(50, 90), fontsize=10,
-                color='green', alpha=0.7,
-                ha='center')
 
     plt.tight_layout()
     path = OUT_DIR / 'fig6_fps_map_tradeoff.png'
@@ -459,14 +480,16 @@ def fig7_confidence_distribution():
 # ======================================================================
 def fig8_fusion_weights():
     conf_levels = np.linspace(0, 1, 50)
-    # Simulated fusion weights based on softmax(c/τ) with τ=1
+    # Fusion weights w = softmax(c / τ) using the trained model's learned
+    # temperature and its measured clean-data RGB confidence
+    tau   = load_model_stats()['learned']['temperature']
+    rgb_c = load_fault_results()['baseline']['rgb_conf']
     rgb_weights = []
     thr_weights = []
     for c in conf_levels:
-        rgb_c = 0.9  # RGB confidence fixed
         thr_c = c
-        w_rgb = np.exp(rgb_c) / (np.exp(rgb_c) + np.exp(thr_c))
-        w_thr = np.exp(thr_c) / (np.exp(rgb_c) + np.exp(thr_c))
+        w_rgb = np.exp(rgb_c/tau) / (np.exp(rgb_c/tau) + np.exp(thr_c/tau))
+        w_thr = 1.0 - w_rgb
         rgb_weights.append(w_rgb)
         thr_weights.append(w_thr)
 
@@ -513,13 +536,15 @@ def fig9_lr_schedule():
                 (1 + np.cos(np.pi*e/t_max))
                 for e in range(epochs)]
 
-    lr_s1 = cosine_lr(1e-3, 1e-5, 10, 10)
-    lr_s2 = cosine_lr(5e-4, 5e-6, 10, 10)
-    lr_s3 = cosine_lr(1e-4, 1e-6, 30, 30)
+    # Logged learning rates (stage 2 stopped after 4 of its 10 planned
+    # epochs; stage 3 was resumed once, restarting its cosine schedule)
+    lr_s1 = read_tb('stage1', 'epoch/lr', last_file_only=True)
+    lr_s2 = read_tb('stage2', 'epoch/lr')
+    lr_s3 = read_tb('stage3', 'epoch/lr')
 
-    epochs_s1 = list(range(1, 11))
-    epochs_s2 = list(range(11, 21))
-    epochs_s3 = list(range(21, 51))
+    epochs_s1 = list(range(1, len(lr_s1)+1))
+    epochs_s2 = list(range(epochs_s1[-1]+1, epochs_s1[-1]+1+len(lr_s2)))
+    epochs_s3 = list(range(epochs_s2[-1]+1, epochs_s2[-1]+1+len(lr_s3)))
 
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.plot(epochs_s1, lr_s1, '-', color=C['stage1'],
@@ -529,14 +554,8 @@ def fig9_lr_schedule():
     ax.plot(epochs_s3, lr_s3, '-', color=C['stage3'],
             linewidth=2.5, label='Stage 3 (full fine-tune)')
 
-    ax.axvline(10.5, color='gray', linestyle='--', alpha=0.5)
-    ax.axvline(20.5, color='gray', linestyle='--', alpha=0.5)
-    ax.text(5,  1.1e-3, 'Stage 1', ha='center', fontsize=10,
-            color=C['stage1'])
-    ax.text(15, 5.5e-4, 'Stage 2', ha='center', fontsize=10,
-            color=C['stage2'])
-    ax.text(35, 1.1e-4, 'Stage 3', ha='center', fontsize=10,
-            color=C['stage3'])
+    ax.axvline(epochs_s1[-1]+0.5, color='gray', linestyle='--', alpha=0.5)
+    ax.axvline(epochs_s2[-1]+0.5, color='gray', linestyle='--', alpha=0.5)
 
     ax.set_xlabel('Epoch', fontsize=12)
     ax.set_ylabel('Learning Rate', fontsize=12)
@@ -548,6 +567,47 @@ def fig9_lr_schedule():
 
     plt.tight_layout()
     path = OUT_DIR / 'fig9_lr_schedule.png'
+    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"Saved: {path}")
+
+
+# ======================================================================
+# Fig 10 — Robustness: AFTMSF vs baselines under the same faults
+# ======================================================================
+def fig10_robustness_vs_baselines():
+    with open('experiments/baseline_fault_results.json') as f:
+        base = json.load(f)
+    ours  = load_fault_results()
+    conds = ['rgb_dropout', 'rgb_blur', 'rgb_occlusion', 'rgb_gaussian_noise',
+             'thermal_dropout', 'thermal_blur', 'thermal_occlusion',
+             'thermal_gaussian_noise']
+    labels = ['RGB\ndropout', 'RGB\nblur', 'RGB\nocclusion', 'RGB\nnoise',
+              'Thermal\ndropout', 'Thermal\nblur', 'Thermal\nocclusion',
+              'Thermal\nnoise']
+    series = [
+        ('RGB Only',     C['rgb'],    [base['RGBOnly'].get(c, {}).get('mAP', np.nan) for c in conds]),
+        ('Early Fusion', C['early'],  [base['EarlyFusion'][c]['mAP'] for c in conds]),
+        ('Late Fusion',  C['late'],   [base['LateFusion'][c]['mAP'] for c in conds]),
+        ('AFTMSF',       C['aftmsf'], [ours[c]['mAP@0.5'] for c in conds]),
+    ]
+
+    x, width = np.arange(len(conds)), 0.2
+    fig, ax = plt.subplots(figsize=(14, 5.5))
+    for i, (name, col, vals) in enumerate(series):
+        ax.bar(x + (i - 1.5) * width, vals, width, label=name, color=col,
+               edgecolor='black', linewidth=0.4)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel('mAP@0.5 (%)')
+    ax.set_ylim(0, 100)
+    ax.set_title('Detection Under Sensor Faults — KAIST Test Set\n'
+                 '(RGB Only has no thermal input, so thermal faults do not apply)',
+                 fontsize=13, fontweight='bold')
+    ax.legend(ncol=4, loc='upper center')
+
+    plt.tight_layout()
+    path = OUT_DIR / 'fig10_robustness_vs_baselines.png'
     plt.savefig(path, dpi=150, bbox_inches='tight')
     plt.close()
     print(f"Saved: {path}")
@@ -569,7 +629,8 @@ if __name__ == '__main__':
     fig7_confidence_distribution()
     fig8_fusion_weights()
     fig9_lr_schedule()
+    fig10_robustness_vs_baselines()
 
-    print(f"\nAll {9} figures saved to {OUT_DIR}/")
+    print(f"\nAll {10} figures saved to {OUT_DIR}/")
     print("Ready for IEEE TITS paper and B.Tech report.")
     

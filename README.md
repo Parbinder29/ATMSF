@@ -50,22 +50,33 @@ Model size (KAIST configuration): 67.4M parameters — encoders 53.3M, ACAF 11.6
 
 ## Results (KAIST test set, 131 images)
 
-| Method | Params | mAP@0.5 | mIoU |
-|---|---|---|---|
-| RGB Only | 27.3M | 69.97% | 37.00% |
-| Early Fusion | 27.3M | 70.66% | 38.45% |
-| Late Fusion | 54.1M | 77.89% | 36.34% |
-| **AFTMSF** | 67.4M | **89.14%** | **44.28%** |
+| Method | Params | mAP@0.5 | mIoU | FPS |
+|---|---|---|---|---|
+| RGB Only | 27.3M | 69.97% | 37.00% | 92.7 |
+| Early Fusion | 27.3M | 70.66% | 38.45% | 89.6 |
+| Late Fusion | 54.1M | 77.89% | 36.34% | 48.8 |
+| **AFTMSF** | 67.4M | **89.14%** | **44.28%** | 22.2 |
 
-Fault injection (100% of test images corrupted, `--seed 0`):
+The baselines were trained for 5 epochs without fault injection; AFTMSF for 50 epochs with it.
 
-| Fault | RGB mAP@0.5 | Thermal mAP@0.5 |
-|---|---|---|
-| None | 89.14% | 89.14% |
-| Dropout | 63.85% | 78.20% |
-| Blur | 69.83% | 79.41% |
-| Occlusion | 78.77% | 81.03% |
-| Gaussian noise (σ=0.3) | 80.82% | 80.61% |
+Fault injection (100% of test images corrupted, `--seed 0`), mAP@0.5:
+
+| Fault | RGB Only | Early Fusion | Late Fusion | **AFTMSF** |
+|---|---|---|---|---|
+| RGB dropout | 0.00 | 0.00 | 0.00 | **63.85** |
+| RGB blur | 0.00 | 18.18 | 18.18 | **69.83** |
+| RGB occlusion | 59.86 | 54.02 | 60.98 | **78.77** |
+| RGB Gaussian noise (σ=0.3) | 68.34 | 70.61 | 75.59 | **80.82** |
+| Thermal dropout | — | 61.10 | 21.32 | **78.20** |
+| Thermal blur | — | 61.83 | 32.42 | **79.41** |
+| Thermal occlusion | — | 70.44 | 67.32 | **81.03** |
+| Thermal Gaussian noise | — | 70.94 | 61.49 | **80.61** |
+
+Ablation (inference-time, no retraining): removing the fault detector (equal fusion weights)
+gives 89.20% clean and changes every fault result by less than 1 pp; removing the entropy
+signal gives 89.31%. The robustness comes mainly from the cross-modal attention and
+fault-injection training rather than the confidence gating, and thermal faults currently
+*raise* thermal confidence. See `experiments/fault_detector_ablation.json`.
 
 Other datasets:
 
@@ -78,8 +89,10 @@ Other datasets:
 FLIR detection is near zero because its objects average 6×15 px at 320×256, below what the
 stride-4 FPN level can resolve. Segmentation still works.
 
-Speed on an RTX 4050 Laptop GPU (6 GB) was 11–37 FPS across datasets; it varies with the
-laptop's power mode, so plug in the charger and use the "Best performance" mode when timing.
+FPS: model forward pass, 256×320, batch 1, FP32, RTX 4050 Laptop GPU (6 GB) on mains power,
+median of 5 runs (`src/benchmark.py`). AFTMSF runs at 22.2 (KAIST), 26.0 (KITTI) and 23.3 (FLIR) FPS.
+
+The full write-up is in `paper/AFTMSF_Project_Report_Final.docx`.
 
 ## Setup
 
@@ -125,11 +138,15 @@ python -m src.evaluate --config configs/kaist.yaml --checkpoint experiments/stag
 python -m src.evaluate_kitti --checkpoint experiments/kitti_stage2/last.pth
 python -m src.evaluate_flir --checkpoint experiments/flir_stage3/last.pth
 python -m src.experiments.fault_experiment --checkpoint experiments/stage3/last.pth --seed 0
+python -m src.experiments.baseline_fault_experiment
+python -m src.experiments.ablation_experiment
+python -m src.benchmark
 python -m src.visualize_all
 ```
 
-`visualize_all` writes the paper figures to `experiments/figures_paper/`; the fault heatmap
-and confidence figures read `experiments/fault_experiment_results.json`.
+`visualize_all` writes the figures to `experiments/figures_paper/` from the result files
+(`fault_experiment_results.json`, `baseline_fault_results.json`, `model_stats.json`) and the
+TensorBoard logs, so it needs no GPU.
 
 ## Train from scratch
 
@@ -153,8 +170,9 @@ src/models/   encoders/ (rgb, thermal, depth), fault_detector, acaf_module,
               detection_head, seg_head, aftmsf_model, baselines
 src/datasets/ kaist_dataset, kitti_dataset, flir_dataset (fault injection is built in)
 src/losses/   multitask_loss, reliability_reg
-src/experiments/ fault_experiment, baseline_experiment
-src/          train*, evaluate*, visualize, visualize_all
+src/experiments/ fault_experiment, baseline_experiment, baseline_fault_experiment,
+              ablation_experiment
+src/          train*, evaluate*, benchmark, visualize, visualize_all
 experiments/  result files (*.json, *_eval.yaml), figures/, figures_paper/, TensorBoard logs
 paper/        report and paper PDFs
 ```

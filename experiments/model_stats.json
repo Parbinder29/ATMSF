@@ -1,0 +1,95 @@
+{
+ "params": {
+  "kaist": {
+   "encoder_rgb": 26854464,
+   "encoder_thermal": 26848192,
+   "fault_detector": 197002,
+   "acaf": 8143364,
+   "det_head": 4736522,
+   "seg_head": 570498,
+   "total": 67350042
+  },
+  "kitti": {
+   "encoder_rgb": 26854464,
+   "encoder_depth": 3331168,
+   "fault_detector": 197132,
+   "acaf": 8143364,
+   "det_head": 4738827,
+   "seg_head": 570563,
+   "total": 43835518
+  },
+  "flir": {
+   "encoder_rgb": 26854464,
+   "encoder_thermal": 26848192,
+   "fault_detector": 197262,
+   "acaf": 8143364,
+   "det_head": 4741132,
+   "seg_head": 570628,
+   "total": 67355042
+  },
+  "RGBOnly": 27278664,
+  "EarlyFusion": 27281800,
+  "LateFusion": 54126856
+ },
+ "fps": {
+  "AFTMSF_KAIST": 22.22,
+  "AFTMSF_KITTI": 25.98,
+  "AFTMSF_FLIR": 23.3,
+  "RGBOnly": 92.66,
+  "EarlyFusion": 89.6,
+  "LateFusion": 48.77
+ },
+ "learned": {
+  "temperature": 0.7607132792472839,
+  "signal_weights": {
+   "rgb": [
+    0.23094210028648376,
+    0.512633204460144,
+    0.2564246952533722
+   ],
+   "thermal": [
+    0.34989839792251587,
+    0.30536094307899475,
+    0.34474068880081177
+   ]
+  }
+ },
+ "fusion_weights": {
+  "baseline": [
+   0.5935,
+   0.4065
+  ],
+  "rgb_dropout": [
+   0.4869,
+   0.5131
+  ],
+  "rgb_gaussian_noise": [
+   0.5845,
+   0.4155
+  ],
+  "rgb_occlusion": [
+   0.5648,
+   0.4352
+  ],
+  "rgb_blur": [
+   0.4769,
+   0.5231
+  ],
+  "thermal_dropout": [
+   0.5371,
+   0.4629
+  ],
+  "thermal_gaussian_noise": [
+   0.5433,
+   0.4567
+  ],
+  "thermal_occlusion": [
+   0.583,
+   0.417
+  ],
+  "thermal_blur": [
+   0.5691,
+   0.4309
+  ]
+ }
+}

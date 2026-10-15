@@ -1,0 +1,100 @@
+{
+ "RGBOnly": {
+  "clean": {
+   "mAP": 69.97,
+   "mIoU": 37.0
+  },
+  "rgb_dropout": {
+   "mAP": 0.0,
+   "mIoU": 25.0
+  },
+  "rgb_blur": {
+   "mAP": 0.0,
+   "mIoU": 26.76
+  },
+  "rgb_occlusion": {
+   "mAP": 59.86,
+   "mIoU": 36.96
+  },
+  "rgb_gaussian_noise": {
+   "mAP": 68.34,
+   "mIoU": 35.77
+  }
+ },
+ "EarlyFusion": {
+  "clean": {
+   "mAP": 70.66,
+   "mIoU": 38.45
+  },
+  "rgb_dropout": {
+   "mAP": 0.0,
+   "mIoU": 25.0
+  },
+  "rgb_blur": {
+   "mAP": 18.18,
+   "mIoU": 40.78
+  },
+  "rgb_occlusion": {
+   "mAP": 54.02,
+   "mIoU": 38.4
+  },
+  "rgb_gaussian_noise": {
+   "mAP": 70.61,
+   "mIoU": 38.34
+  },
+  "thermal_dropout": {
+   "mAP": 61.1,
+   "mIoU": 33.95
+  },
+  "thermal_blur": {
+   "mAP": 61.83,
+   "mIoU": 37.71
+  },
+  "thermal_occlusion": {
+   "mAP": 70.44,
+   "mIoU": 38.26
+  },
+  "thermal_gaussian_noise": {
+   "mAP": 70.94,
+   "mIoU": 38.45
+  }
+ },
+ "LateFusion": {
+  "clean": {
+   "mAP": 77.89,
+   "mIoU": 36.34
+  },
+  "rgb_dropout": {
+   "mAP": 0.0,
+   "mIoU": 25.0
+  },
+  "rgb_blur": {
+   "mAP": 18.18,
+   "mIoU": 38.59
+  },
+  "rgb_occlusion": {
+   "mAP": 60.98,
+   "mIoU": 35.59
+  },
+  "rgb_gaussian_noise": {
+   "mAP": 75.59,
+   "mIoU": 36.57
+  },
+  "thermal_dropout": {
+   "mAP": 21.32,
+   "mIoU": 34.52
+  },
+  "thermal_blur": {
+   "mAP": 32.42,
+   "mIoU": 35.66
+  },
+  "thermal_occlusion": {
+   "mAP": 67.32,
+   "mIoU": 35.35
+  },
+  "thermal_gaussian_noise": {
+   "mAP": 61.49,
+   "mIoU": 38.38
+  }
+ }
+}
