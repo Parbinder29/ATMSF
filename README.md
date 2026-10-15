@@ -9,6 +9,45 @@ FCOS-style detections and DeepLabV3+-style segmentation.
 B.Tech Project-I, Group 23G15 — Sundram Kumar Ray, Arshiya, Parbinder Singh, Anupriya.
 Supervisor: Prof. Dinesh Kumar, Dept. of CSE, Central University of Jammu.
 
+## Why
+
+Autonomous vehicles combine cameras, thermal imagers and LiDAR because each fails in different
+conditions: RGB in darkness and glare, thermal on fine texture, LiDAR in rain and fog. Most fusion
+networks weight every sensor the same way regardless of its state, so a silently failing sensor
+feeds corrupted features into the fused representation. AFTMSF estimates each sensor's
+reliability at runtime, with no fault labels needed at inference, and shifts fusion weight toward
+the sensors that are still working.
+
+## Architecture
+
+```
+ RGB image ──► ResNet-50 + FPN ──┐                      ┌──► FCOS detection head ──► boxes
+                                 │                      │    (4 FPN scales)
+ Thermal ───► ResNet-50 + FPN ───┼─► Fault detector ──► ACAF fusion
+ (1-channel)                     │   c_i ∈ [0,1]        │
+                                 │   per sensor         └──► DeepLabV3+ seg head ──► mask
+ LiDAR depth ► DW-separable CNN ─┘
+               + FPN (3.3M params)
+```
+
+| Component | What it does |
+|---|---|
+| **Encoders** | 256-channel FPN features at strides 4/8/16/32. The thermal ResNet-50 takes 1 channel, initialised by averaging the ImageNet RGB filters. The depth encoder fills sparse LiDAR returns with dilated convolutions first. |
+| **Fault detector** | Per sensor, combines three signals with learned weights: autoencoder reconstruction error (input looks unlike training data), feature variance (dropout gives ~0, noise gives very high), and prediction entropy (uncertain predictions). Output: confidence `c_i`. |
+| **ACAF fusion** | Fusion weights `w = softmax(c / τ)` with a learned temperature τ. Each sensor attends to all sensors with 4-head cross-attention on 8×8 pooled tokens (≈900× less memory than full attention, so it fits in 6 GB), and the outputs are summed with weights `w`. |
+| **Task heads** | Anchor-free FCOS detection on all 4 scales; DeepLabV3+ segmentation with ASPP on the aggregated stride-4 feature. |
+
+Training loss: `L = (focal + L1 + centerness) + (0.5·CE + 0.5·Dice) + 0.1·MSE(c_i, fault label)`.
+The last term teaches the fault detector using synthetic faults (dropout, Gaussian noise,
+occlusion, blur) injected during training.
+
+Training runs in three stages on a single 6 GB GPU: (1) encoders frozen, lr 1e-3; (2) last encoder
+block unfrozen, lr 5e-4; (3) full fine-tuning, lr 1e-4. AdamW, cosine schedule, FP16 mixed
+precision, gradient clipping at 10.
+
+Model size (KAIST configuration): 67.4M parameters — encoders 53.3M, ACAF 11.6M, detection head
+4.7M, segmentation head 1.3M, fault detector 0.3M.
+
 ## Results (KAIST test set, 131 images)
 
 | Method | Params | mAP@0.5 | mIoU |
@@ -119,3 +158,15 @@ src/          train*, evaluate*, visualize, visualize_all
 experiments/  result files (*.json, *_eval.yaml), figures/, figures_paper/, TensorBoard logs
 paper/        report and paper PDFs
 ```
+
+## Limitations
+
+- KAIST results use a 1,374-image subset of the KAIST benchmark, so they are not directly comparable with numbers reported on the full benchmark.
+- FLIR detection is near zero because of very small objects; a stride-2 detection level would be needed.
+- Images are trained at 256×320 (KAIST native is 512×640) because of the 6 GB GPU memory limit.
+
+## Acknowledgements
+
+Datasets: KAIST Multispectral Pedestrian (Hwang et al., CVPR 2015), KITTI (Geiger et al., IJRR 2013)
+and FLIR ADAS v1.3 (Teledyne FLIR). Each dataset is subject to its own licence terms.
+Built with PyTorch and torchvision.

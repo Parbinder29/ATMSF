@@ -15,3 +15,6 @@ __pycache__/
 *.swp
 Thumbs.db
 desktop.ini
+
+# Personal session notes
+SESSION_SAVE.txt
